@@ -38,17 +38,17 @@ function Tracker(config) {
     this.initListeners = function (checker) {
         var tracker = this;
         function trackUpdate(checker, track){ tracker.trackUpdate(checker, track); }
-        checker.on('trackUpdate', trackUpdate);
+        checker.on('dataUpdate', dataUpdate);
     };
 }
 
 Tracker.prototype = new EventEmitter;
 Tracker.constructor = Tracker;
 
-Tracker.prototype.trackUpdate = function (checker, track) {
+Tracker.prototype.dataUpdate = function (checker, track) {
     //console.log('\n------ trackUpdate -----\n');
     var midifiedTrack = this.modify(checker.getName(), track);
-    this.emit('trackUpdate', checker.getName(), midifiedTrack);
+    this.emit('dataUpdate', checker.getName(), midifiedTrack);
 
     var updaters = this.getUpdater(checker.getName()) || [];
     var song = this.format(midifiedTrack);
@@ -58,7 +58,7 @@ Tracker.prototype.trackUpdate = function (checker, track) {
     }
     // DEBUG
     //console.log(song);
-}
+};
 
 Tracker.prototype.modify = function (name, data) {
     var result = data;
@@ -102,7 +102,7 @@ Tracker.prototype.start = function(){
 
 Tracker.prototype.getCurrentTrack = function (name) {
     return this.getChecker(name).getCurrentTrack();
-}
+};
 
 exports.create = function(config){
     return new Tracker(config);
