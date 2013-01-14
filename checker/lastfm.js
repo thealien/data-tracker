@@ -16,7 +16,7 @@ function LastfmChecker (config) {
     }
     this.setCurrentTrack = function (track) {
         currentTrack = track;
-        this.emit('dataUpdate', this, track)
+        this.emit('trackUpdate', this, track)
         return this;
     }
 
@@ -47,7 +47,7 @@ LastfmChecker.prototype.check = function () {
     this.getClient().getRecentTracks(this.config.channel, 1, function(data){
         var currentTrack = {},
             prevTrack = {};
-        if(data){
+        if(data && data.recenttracks){
             try {
                 var track = data.recenttracks.track;
                 if(util.isArray(track)){
@@ -77,8 +77,10 @@ LastfmChecker.prototype.check = function () {
                 checker.setCurrentTrack(currentTrack);
             }
         } else {
-            currentTrack    = Object.create(checker.config.defaultTrack);
-            checker.setCurrentTrack(currentTrack);
+            //currentTrack    = Object.create(checker.config.defaultTrack);
+            //checker.setCurrentTrack(currentTrack);
+            console.log('EMPTY DATA');
+            console.log(data);
         }
 
         setTimeout(
