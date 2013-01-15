@@ -19,6 +19,7 @@ function LastfmChecker (config) {
         this.emit('dataUpdate', this, track);
         return this;
     };
+    this.getCurrentData = this.getCurrentTrack;
 
     var prevTrack = {};
     this.getPrevTrack = function () {

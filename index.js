@@ -1,7 +1,6 @@
 'use strict';
 
 var EventEmitter = require("events").EventEmitter,
-    util = require('util'),
     checker = require('./checker'),
     updater = require('./updater');
 
@@ -34,6 +33,15 @@ function Tracker(config) {
     };
     this.getModifier = function (name) {
         return modifiers[name];
+    };
+
+    var formatters = {};
+    this.addFormatter = function (name, formatter) {
+        formatters[name] = formatter;
+        return this;
+    };
+    this.getFormatter = function (name) {
+        return formatters[name];
     };
 
     var updaters = {};
@@ -92,14 +100,20 @@ Tracker.prototype.addCoreModules = function () {
  * @param data
  */
 Tracker.prototype.dataUpdate = function (checker, data) {
-    var modifiedData = this.modify(checker.getName(), data);
-    this.emit('dataUpdate', checker.getName(), modifiedData);
+    var sourceName = checker.getName();
+    var modifiedData = this.modify(sourceName, data);
+    var formattedData = modifiedData;
+    var formatter = this.getFormatter(sourceName);
+    if (typeof formatter === 'function') {
+        formattedData = formatter(modifiedData);
+    }
 
-    var updaters = this.getUpdater(checker.getName()) || [];
-    var song = this.format(modifiedData);
+    this.emit('dataUpdate', sourceName, modifiedData, formattedData);
+
+    var updaters = this.getUpdater(sourceName) || [];
     var i = updaters.length;
     for (; i--; ) {
-        updaters[i].update(song);
+        updaters[i].update(formattedData);
     }
 };
 
@@ -122,16 +136,6 @@ Tracker.prototype.modify = function (name, data) {
 
 /**
  *
- * @param data
- * @return {*}
- */
-Tracker.prototype.format = function (data) {
-    data = data || {};
-    return util.format('%s - %s', data.artist, data.name);
-};
-
-/**
- *
  */
 Tracker.prototype.start = function(){
     var streams = this.config || [];
@@ -141,6 +145,10 @@ Tracker.prototype.start = function(){
 
         var modifiers = stream.modifiers || [];
         this.addModifier(stream.name, modifiers);
+
+        if (stream.formatter) {
+            this.addFormatter(stream.name, stream.formatter);
+        }
 
         var destinations = stream.destinations || [];
         var j = destinations.length;
@@ -162,8 +170,8 @@ Tracker.prototype.start = function(){
  * @param name
  * @return {*}
  */
-Tracker.prototype.getCurrentTrack = function (name) {
-    return this.getChecker(name).getCurrentTrack();
+Tracker.prototype.getCurrentData = function (name) {
+    return this.getChecker(name).getCurrentData();
 };
 
 /**
