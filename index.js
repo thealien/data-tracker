@@ -1,11 +1,20 @@
+'use strict';
+
 var EventEmitter = require("events").EventEmitter,
     util = require('util'),
     checker = require('./checker'),
     updater = require('./updater');
+
 var modules = {
     checkers: {},
     updaters: {}
 };
+
+/**
+ *
+ * @param config
+ * @constructor
+ */
 function Tracker(config) {
     this.config = config;
     var checkers = {};
@@ -38,9 +47,9 @@ function Tracker(config) {
     };
 
     var tracker = this;
-    function trackUpdate(checker, track){ tracker.trackUpdate(checker, track); }
+    function dataUpdate(checker, data){ tracker.dataUpdate(checker, data); }
     this.initListeners = function (checker) {
-        checker.on('trackUpdate', trackUpdate);
+        checker.on('dataUpdate', dataUpdate);
     };
 
     this.addCoreModules();
@@ -49,14 +58,27 @@ function Tracker(config) {
 Tracker.prototype = new EventEmitter();
 Tracker.constructor = Tracker;
 
+/**
+ *
+ * @param name
+ * @param module
+ */
 Tracker.prototype.addCheckerModule = function (name, module) {
     modules.checkers[name] = module;
 };
 
+/**
+ *
+ * @param name
+ * @param module
+ */
 Tracker.prototype.addUpdaterModule = function (name, module) {
     modules.updaters[name] = module;
 };
 
+/**
+ *
+ */
 Tracker.prototype.addCoreModules = function () {
     // checkers
     this.addCheckerModule('lastfm', require('./checker/lastfm'));
@@ -64,18 +86,29 @@ Tracker.prototype.addCoreModules = function () {
     this.addUpdaterModule('icecast', require('./updater/icecast'));
 };
 
-Tracker.prototype.trackUpdate = function (checker, track) {
-    var modifiedTrack = this.modify(checker.getName(), track);
-    this.emit('trackUpdate', checker.getName(), modifiedTrack);
+/**
+ *
+ * @param checker
+ * @param data
+ */
+Tracker.prototype.dataUpdate = function (checker, data) {
+    var modifiedData = this.modify(checker.getName(), data);
+    this.emit('dataUpdate', checker.getName(), modifiedData);
 
     var updaters = this.getUpdater(checker.getName()) || [];
-    var song = this.format(modifiedTrack);
+    var song = this.format(modifiedData);
     var i = updaters.length;
     for (; i--; ) {
         updaters[i].update(song);
     }
 };
 
+/**
+ *
+ * @param name
+ * @param data
+ * @return {*}
+ */
 Tracker.prototype.modify = function (name, data) {
     var result = data;
     var modifiersList = this.getModifier(name) || [];
@@ -87,11 +120,19 @@ Tracker.prototype.modify = function (name, data) {
     return result;
 };
 
+/**
+ *
+ * @param data
+ * @return {*}
+ */
 Tracker.prototype.format = function (data) {
     data = data || {};
-    return util.format('%s - %s', data.artist, data.name)
+    return util.format('%s - %s', data.artist, data.name);
 };
 
+/**
+ *
+ */
 Tracker.prototype.start = function(){
     var streams = this.config || [];
     var i = streams.length;
@@ -116,10 +157,20 @@ Tracker.prototype.start = function(){
     }
 };
 
+/**
+ *
+ * @param name
+ * @return {*}
+ */
 Tracker.prototype.getCurrentTrack = function (name) {
     return this.getChecker(name).getCurrentTrack();
-}
+};
 
+/**
+ *
+ * @param config
+ * @return {Tracker}
+ */
 exports.create = function(config){
     return new Tracker(config);
 };
