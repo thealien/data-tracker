@@ -1,13 +1,7 @@
-var icecast = require('./icecast');
-
-exports.create = function (config) {
-    var updater;
-    switch (config.type) {
-        case 'icecast':
-            updater = icecast;
-            break;
-        default:
-            throw Error('Unknown updater type ' + config.type);
+exports.create = function (config, modules) {
+    modules = modules || {};
+    if (!modules[config.type]) {
+        throw Error('No updater module for ' + config.type);
     }
-    return updater.create(config.config);
-}
+    return modules[config.type].create(config.config);
+};

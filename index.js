@@ -2,10 +2,12 @@ var EventEmitter = require("events").EventEmitter,
     util = require('util'),
     checker = require('./checker'),
     updater = require('./updater');
-
+var modules = {
+    checkers: {},
+    updaters: {}
+};
 function Tracker(config) {
     this.config = config;
-
     var checkers = {};
     this.addChecker = function (checker) {
         checkers[checker.getName()] = checker;
@@ -27,7 +29,7 @@ function Tracker(config) {
 
     var updaters = {};
     this.addUpdater = function (name, updater) {
-        if (!updaters[name]) updaters[name] = [];
+        if (!updaters[name]) { updaters[name] = []; }
         updaters[name].push(updater);
         return this;
     };
@@ -35,34 +37,51 @@ function Tracker(config) {
         return updaters[name];
     };
 
+    var tracker = this;
+    function trackUpdate(checker, track){ tracker.trackUpdate(checker, track); }
     this.initListeners = function (checker) {
-        var tracker = this;
-        function trackUpdate(checker, track){ tracker.trackUpdate(checker, track); }
         checker.on('trackUpdate', trackUpdate);
     };
+
+    this.addCoreModules();
 }
 
-Tracker.prototype = new EventEmitter;
+Tracker.prototype = new EventEmitter();
 Tracker.constructor = Tracker;
 
+Tracker.prototype.addCheckerModule = function (name, module) {
+    modules.checkers[name] = module;
+};
+
+Tracker.prototype.addUpdaterModule = function (name, module) {
+    modules.updaters[name] = module;
+};
+
+Tracker.prototype.addCoreModules = function () {
+    // checkers
+    this.addCheckerModule('lastfm', require('./checker/lastfm'));
+    // updaters
+    this.addUpdaterModule('icecast', require('./updater/icecast'));
+};
+
 Tracker.prototype.trackUpdate = function (checker, track) {
-    var midifiedTrack = this.modify(checker.getName(), track);
-    this.emit('trackUpdate', checker.getName(), midifiedTrack);
+    var modifiedTrack = this.modify(checker.getName(), track);
+    this.emit('trackUpdate', checker.getName(), modifiedTrack);
 
     var updaters = this.getUpdater(checker.getName()) || [];
-    var song = this.format(midifiedTrack);
+    var song = this.format(modifiedTrack);
     var i = updaters.length;
     for (; i--; ) {
         updaters[i].update(song);
     }
-}
+};
 
 Tracker.prototype.modify = function (name, data) {
     var result = data;
     var modifiersList = this.getModifier(name) || [];
     var i = modifiersList.length;
     for (; i--; ) {
-        if (typeof modifiersList[i] !== 'function') continue;
+        if (typeof modifiersList[i] !== 'function') { continue; }
         result = modifiersList[i](data);
     }
     return result;
@@ -86,11 +105,11 @@ Tracker.prototype.start = function(){
         var j = destinations.length;
         for (; j--; ) {
             var destination = destinations[j];
-            var upd = updater.create(destination);
+            var upd = updater.create(destination, modules.updaters);
             this.addUpdater(stream.name, upd);
         }
 
-        var ch = checker.create(stream.source);
+        var ch = checker.create(stream.source, modules.checkers);
         ch.setName(stream.name);
         this.addChecker(ch);
         ch.start();
