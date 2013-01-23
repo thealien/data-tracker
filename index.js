@@ -104,7 +104,9 @@ Tracker.prototype.dataUpdate = function (checker, data) {
     var modifiedData = this.modify(sourceName, data);
     var formattedData = modifiedData;
     var formatter = this.getFormatter(sourceName);
+    var isRawData = true;
     if (typeof formatter === 'function') {
+        isRawData = false;
         formattedData = formatter(modifiedData);
     }
 
@@ -113,7 +115,7 @@ Tracker.prototype.dataUpdate = function (checker, data) {
     var updaters = this.getUpdater(sourceName) || [];
     var i = updaters.length;
     for (; i--; ) {
-        updaters[i].update(formattedData);
+        updaters[i].update(formattedData, isRawData);
     }
 };
 

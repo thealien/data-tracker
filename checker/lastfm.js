@@ -54,10 +54,23 @@ LastfmChecker.prototype.check = function () {
             try {
                 var track = data.recenttracks.track;
                 if(util.isArray(track)){
+                    //console.log('isArray');
                     currentTrack    =  checker.parse(track[0]);
                     prevTrack       =  checker.parse(track[1]);
                     checker.inPause    = false;
-                } else { // case with jingle
+                } else if (track.mbid) {
+                    //console.log('track.mbid');
+                    currentTrack    =  checker.parse(track);
+                    if(checker.getCurrentTrack().mbid !== track.mbid) {
+                        //console.log('track.mbid != ');
+                        prevTrack       =   checker.getCurrentTrack();
+                        if (prevTrack.name) {
+                            prevTrack = currentTrack;
+                        }
+                        checker.inPause    = false;
+                    }
+                }  else {                                        // case with jingle
+                    //console.log('else mbid');
                     //console.log('def track', checker.config.defaultTrack);
                     currentTrack    = checker.config.defaultTrack;
                     prevTrack       = { name:   '', artist: '', ts: 0 };
