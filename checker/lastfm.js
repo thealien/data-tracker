@@ -4,19 +4,45 @@ var EventEmitter = require("events").EventEmitter,
     util = require('util'),
     client = require('../client/lastfm');
 
+function parse (data) {
+    var result = false;
+    try {
+        result = {
+            name:   data.name || '',
+            artist: data.artist['#text'] || '',
+            album:  data.album['#text'] || '',
+            ts:     data.date ? data.date.uts : 0,
+            mbid:   data.mbid || 0,
+            image:  data.image || null,
+            url:    data.url || null
+        };
+    }
+    catch(e){
+        console.log(e);
+    }
+    return result;
+}
+
+function isSame (track1, track2) {
+    return track1 && (track1.name === track2.name);
+}
+
+
+
 function LastfmChecker (config) {
     this.config = config;
     this.client = client.create(this.config.credential.api_key);
-
-    this.inPause = false;
 
     var currentTrack = {};
     this.getCurrentTrack = function () {
         return currentTrack;
     };
     this.setCurrentTrack = function (track) {
-        currentTrack = track;
-        this.emit('dataUpdate', this, track);
+        var same = isSame(this.getCurrentTrack(), track);
+        if (!isSame(this.getCurrentTrack(), track)) {
+            currentTrack = track;
+            this.emit('dataUpdate', this, currentTrack);
+        }
         return this;
     };
     this.getCurrentData = this.getCurrentTrack;
@@ -26,7 +52,9 @@ function LastfmChecker (config) {
         return prevTrack;
     };
     this.setPrevTrack = function (track) {
-        prevTrack = track;
+        if (!isSame(this.getPrevTrack(), track)) {
+            prevTrack = parse(track);
+        }
         return this;
     };
 }
@@ -45,85 +73,35 @@ LastfmChecker.prototype.setClient = function (client) {
 };
 */
 
-LastfmChecker.prototype.check = function () {
+LastfmChecker.prototype.check = function (callback) {
     var checker = this;
     this.getClient().getRecentTracks(this.config.channel, 1, function(data){
-        var currentTrack = {},
-            prevTrack = {};
-        if(data && data.recenttracks){
-            try {
-                var track = data.recenttracks.track;
-                if(util.isArray(track)){
-                    //console.log('isArray');
-                    currentTrack    =  checker.parse(track[0]);
-                    prevTrack       =  checker.parse(track[1]);
-                    checker.inPause    = false;
-                } else if (track.mbid) {
-                    //console.log('track.mbid');
-                    currentTrack    =  checker.parse(track);
-                    if(checker.getCurrentTrack().mbid !== track.mbid) {
-                        //console.log('track.mbid != ');
-                        prevTrack       =   checker.getCurrentTrack();
-                        if (prevTrack.name) {
-                            prevTrack = currentTrack;
-                        }
-                        checker.inPause    = false;
-                    }
-                }  else {                                        // case with jingle
-                    //console.log('else mbid');
-                    //console.log('def track', checker.config.defaultTrack);
-                    currentTrack    = checker.config.defaultTrack;
-                    prevTrack       = { name:   '', artist: '', ts: 0 };
-                    checker.inPause    = true;
+
+        if (!data || !data.recenttracks || !data.recenttracks.track) {
+            // ERROR
+            console.error(data);// TODO handle error
+        } else {
+            var tracks = data.recenttracks.track;
+            if (tracks instanceof Array) {
+            // 2 TRACKS
+                checker.setCurrentTrack(parse(tracks[0]));
+                checker.setPrevTrack(parse(tracks[1]));
+            } else {
+            // SINGLE TRACK
+                var track =  tracks;
+                if (track['@attr'] && track['@attr'].nowplaying) {
+            // NOW PLAYNG
+                    checker.setCurrentTrack(parse(track));
+                } else {
+            // STOP PLAYNG
+                    checker.setCurrentTrack(checker.config.defaultTrack);
+                    checker.setPrevTrack(parse(track));
                 }
             }
-            catch (e){
-                console.log(e);
-            }
-
-            if(
-                (checker.inPause && checker.getPrevTrack().ts) ||       // включился джингл/реклама
-                ((prevTrack.ts > (checker.getPrevTrack().ts || 0))) ||  // сменилась песня, судя по времени
-                (checker.getCurrentTrack().mbid !== currentTrack.mbid)   // сменилась песня, судя по mbid
-                )
-            {
-                checker.setPrevTrack(prevTrack);
-                checker.setCurrentTrack(currentTrack);
-            }
-        } else {
-            //currentTrack    = Object.create(checker.config.defaultTrack);
-            //checker.setCurrentTrack(currentTrack);
-            console.log('EMPTY DATA');
-            console.log(data);
         }
-
-        setTimeout(
-            function(){
-                checker.check();
-            },
-            checker.config.refreshTime * 1000
-        );
+        return callback();
     });
     return true;
-};
-
-LastfmChecker.prototype.parse = function (data) {
-    var result = false;
-    try {
-        result = {
-            name:   data.name || '',
-            artist: data.artist['#text'] || '',
-            album:  data.album['#text'] || '',
-            ts:     data.date ? data.date.uts : 0,
-            mbid:   data.mbid || 0,
-            image:  data.image || null,
-            url:    data.url || null
-        };
-    }
-    catch(e){
-        console.log(e);
-    }
-    return result;
 };
 
 LastfmChecker.prototype.getName = function () {
@@ -136,7 +114,15 @@ LastfmChecker.prototype.setName = function (name) {
 };
 
 LastfmChecker.prototype.start = function () {
-    this.check();
+    var checker = this;
+
+    var next = function () {
+        checker.check(function () {
+            setTimeout(next, checker.config.refreshTime * 1000);
+        });
+    };
+
+    next();
 };
 
 exports.create = function (config) {
