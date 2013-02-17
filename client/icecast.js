@@ -41,7 +41,10 @@ IcecastClient.prototype.request = function (data) {
             ops[field] = data[field];
         }
     }
-    http.get(ops);
+    http.get(ops).on('error', function (error){
+        console.error('Error icecast updater');
+        console.error(error);
+    });
 };
 
 exports.create = function (host, port, username, password) {
