@@ -1,6 +1,7 @@
 'use strict';
 
 var EventEmitter = require("events").EventEmitter,
+    util = require('util'),
     checker = require('./checker'),
     updater = require('./updater');
 
@@ -63,8 +64,7 @@ function Tracker(config) {
     this.addCoreModules();
 }
 
-Tracker.prototype = new EventEmitter();
-Tracker.constructor = Tracker;
+util.inherits(Tracker, EventEmitter);
 
 /**
  *

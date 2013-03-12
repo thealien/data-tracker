@@ -27,8 +27,6 @@ function isSame (track1, track2) {
     return track1 && (track1.name === track2.name);
 }
 
-
-
 function LastfmChecker (config) {
     this.config = config;
     this.client = client.create(this.config.credential.api_key);
@@ -38,10 +36,9 @@ function LastfmChecker (config) {
         return currentTrack;
     };
     this.setCurrentTrack = function (track) {
-        var same = isSame(this.getCurrentTrack(), track);
         if (!isSame(this.getCurrentTrack(), track)) {
             currentTrack = track;
-            this.emit('dataUpdate', this, currentTrack);
+            this.emit('dataUpdate', this, Object.create(currentTrack));
         }
         return this;
     };
@@ -59,19 +56,11 @@ function LastfmChecker (config) {
     };
 }
 
-LastfmChecker.prototype = new EventEmitter();
-LastfmChecker.constructor = LastfmChecker;
+util.inherits(LastfmChecker, EventEmitter);
 
 LastfmChecker.prototype.getClient = function () {
     return this.client;
 };
-
-/*
-LastfmChecker.prototype.setClient = function (client) {
-    this.client = client;
-    return this;
-};
-*/
 
 LastfmChecker.prototype.check = function (callback) {
     var checker = this;
@@ -79,7 +68,7 @@ LastfmChecker.prototype.check = function (callback) {
 
         if (!data || !data.recenttracks || !data.recenttracks.track) {
             // ERROR
-            console.error(data);// TODO handle error
+            console.error(new Date(), data);// TODO handle error
         } else {
             var tracks = data.recenttracks.track;
             if (tracks instanceof Array) {
