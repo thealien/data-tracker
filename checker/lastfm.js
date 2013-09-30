@@ -38,7 +38,7 @@ function LastfmChecker (config) {
     this.setCurrentTrack = function (track) {
         if (!isSame(this.getCurrentTrack(), track)) {
             currentTrack = track;
-            this.emit('dataUpdate', this, Object.create(currentTrack));
+            this.emit('dataUpdate', this, JSON.parse(JSON.stringify(track)));
         }
         return this;
     };
