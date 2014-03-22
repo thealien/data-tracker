@@ -24,8 +24,7 @@ IcecastClient.prototype.updateMount = function (mount, data) {
         path: '/admin/metadata.xsl?' + querystring.stringify({
             mount:      '/'+mount,
             mode:       'updinfo',
-            charset:    'win1251',
-            song:       buf.toString('ascii')
+            song:       buf.toString('utf8')
         })
     });
 };
