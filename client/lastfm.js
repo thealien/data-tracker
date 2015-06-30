@@ -1,6 +1,7 @@
 'use strict';
 
 var http = require('http'),
+    request = require('request'),
     querystring = require('querystring');
 
 var defaultApiHost = 'ws.audioscrobbler.com';
@@ -46,31 +47,24 @@ LastFmClient.prototype.request = function(method, options, callback) {
     options.format     = this.getFormat();
     options._c         = +(new Date());
 
-    var defaults = {
-        host: this.getApiHost(),
-        path: '/2.0/?' + querystring.stringify(options)
-    };
+    var url = 'http://' + this.getApiHost() + '/2.0/?' + querystring.stringify(options);
 
-    http.get(defaults, function(res){
-        var data = '';
-        res.on('data', function(chunk){
-            data += chunk;
-        });
-        res.on('end', function(){
-            try {
-                data = JSON.parse(data);
+    request.get(url, function(error, res, body){
+        var data = null;
+        if (!error) {
+            if (res.statusCode === 200) {
+                try {
+                    data = JSON.parse(body);
+                }
+                catch (e) {
+                    error = e;
+                }
+            } else {
+                error = new Error('LastFM error. Code ' + res.statusCode);
             }
-            catch (e) {
-                data = null;
-                console.log('lastfm error. code', res.statusCode);
-            }
-            callback(data);
-        });
-    })
-        .on('error', function(e) {
-            console.log("Got error: " + e.message);
-            callback(null);
-        });
+        }
+        callback(error, data);
+    });
 };
 
 LastFmClient.prototype.getRecentTracks = function (user, limit, callback) {

@@ -64,11 +64,11 @@ LastfmChecker.prototype.getClient = function () {
 
 LastfmChecker.prototype.check = function (callback) {
     var checker = this;
-    this.getClient().getRecentTracks(this.config.channel, 1, function(data){
-
-        if (!data || !data.recenttracks || !data.recenttracks.track) {
-            // ERROR
-            console.error(new Date(), data);// TODO handle error
+    this.getClient().getRecentTracks(this.config.channel, 1, function(error, data){
+        if (error) {
+            console.error(error);
+        } else if (!data || !data.recenttracks || !data.recenttracks.track) {
+            console.error(new Date(), data);
         } else {
             var tracks = data.recenttracks.track;
             if (tracks instanceof Array) {

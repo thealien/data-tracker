@@ -1,9 +1,12 @@
 {
-    "name":"data-tracker",
-    "version":"0.0.9",
-    "author":"Roman Ziva <roman.ziva@gmail.com> (http://romanziva.ru/)",
-    "repository":{
-        "type":"git",
-        "url":"https://github.com/thealien/data-tracker.git"
-    }
+  "name": "data-tracker",
+  "version": "0.0.10",
+  "author": "Roman Ziva <roman.ziva@gmail.com> (http://romanziva.ru/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thealien/data-tracker.git"
+  },
+  "dependencies": {
+    "request": "^2.58.0"
+  }
 }
