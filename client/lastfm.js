@@ -49,7 +49,7 @@ LastFmClient.prototype.request = function(method, options, callback) {
 
     var url = 'http://' + this.getApiHost() + '/2.0/?' + querystring.stringify(options);
 
-    request.get(url, function(error, res, body){
+    request.get(url, {timeout: 5000}, function(error, res, body){
         var data = null;
         if (!error) {
             if (res.statusCode === 200) {
@@ -73,6 +73,13 @@ LastFmClient.prototype.getRecentTracks = function (user, limit, callback) {
         limit:    limit || 1
     };
     this.request('user.getrecenttracks', options, callback);
+};
+
+LastFmClient.prototype.getTrackInfo = function (mbid, callback) {
+    var options = {
+        mbid: mbid
+    };
+    this.request('track.getInfo', options, callback);
 };
 
 

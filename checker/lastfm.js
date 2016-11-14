@@ -36,9 +36,20 @@ function LastfmChecker (config) {
         return currentTrack;
     };
     this.setCurrentTrack = function (track) {
+        var me = this;
+
         if (!isSame(this.getCurrentTrack(), track)) {
             currentTrack = track;
-            this.emit('dataUpdate', this, JSON.parse(JSON.stringify(track)));
+            me.getClient().getTrackInfo(track.mbid, function (error, result) {
+                if (!error) {
+                    try {
+                        track.image = result.track.album.image;
+                    } catch (e) {
+                        console.warn(e);
+                    }
+                }
+                me.emit('dataUpdate', me, JSON.parse(JSON.stringify(track)));
+            });
         }
         return this;
     };
@@ -71,6 +82,7 @@ LastfmChecker.prototype.check = function (callback) {
             console.error(new Date(), data);
         } else {
             var tracks = data.recenttracks.track;
+            console.log(tracks);
             if (tracks instanceof Array) {
             // 2 TRACKS
                 checker.setCurrentTrack(parse(tracks[0]));
