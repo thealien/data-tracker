@@ -15,7 +15,7 @@ var modules = {
  * @param config
  * @constructor
  */
-function Tracker(config) {
+function Tracker (config) {
     this.config = config;
     var checkers = {};
     this.addChecker = function (checker) {
@@ -47,7 +47,9 @@ function Tracker(config) {
 
     var updaters = {};
     this.addUpdater = function (name, updater) {
-        if (!updaters[name]) { updaters[name] = []; }
+        if (!updaters[name]) {
+            updaters[name] = [];
+        }
         updaters[name].push(updater);
         return this;
     };
@@ -56,7 +58,11 @@ function Tracker(config) {
     };
 
     var tracker = this;
-    function dataUpdate(checker, data){ tracker.dataUpdate(checker, data); }
+
+    function dataUpdate(checker, data) {
+        tracker.dataUpdate(checker, data);
+    }
+
     this.initListeners = function (checker) {
         checker.on('dataUpdate', dataUpdate);
     };
@@ -114,7 +120,7 @@ Tracker.prototype.dataUpdate = function (checker, data) {
 
     var updaters = this.getUpdater(sourceName) || [];
     var i = updaters.length;
-    for (; i--; ) {
+    for (; i--;) {
         updaters[i].update(formattedData, isRawData);
     }
 };
@@ -129,8 +135,10 @@ Tracker.prototype.modify = function (name, data) {
     var result = data;
     var modifiersList = this.getModifier(name) || [];
     var i = modifiersList.length;
-    for (; i--; ) {
-        if (typeof modifiersList[i] !== 'function') { continue; }
+    for (; i--;) {
+        if (typeof modifiersList[i] !== 'function') {
+            continue;
+        }
         result = modifiersList[i](data);
     }
     return result;
@@ -139,10 +147,10 @@ Tracker.prototype.modify = function (name, data) {
 /**
  *
  */
-Tracker.prototype.start = function(){
+Tracker.prototype.start = function () {
     var streams = this.config || [];
     var i = streams.length;
-    for (; i--; ) {
+    for (; i--;) {
         var stream = streams[i];
 
         var modifiers = stream.modifiers || [];
@@ -154,7 +162,7 @@ Tracker.prototype.start = function(){
 
         var destinations = stream.destinations || [];
         var j = destinations.length;
-        for (; j--; ) {
+        for (; j--;) {
             var destination = destinations[j];
             var upd = updater.create(destination, modules.updaters);
             this.addUpdater(stream.name, upd);
@@ -181,6 +189,6 @@ Tracker.prototype.getCurrentData = function (name) {
  * @param config
  * @return {Tracker}
  */
-exports.create = function(config){
+exports.create = function (config) {
     return new Tracker(config);
 };
