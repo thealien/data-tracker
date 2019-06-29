@@ -82,7 +82,13 @@ LastFmClient.prototype.getTrackInfo = function (mbid, callback) {
     this.request('track.getInfo', options, callback);
 };
 
-
+LastFmClient.prototype.getTrackInfo2 = function (artist, track, callback) {
+    var options = {
+        artist: artist,
+        track: track
+    };
+    this.request('track.getInfo', options, callback);
+};
 
 exports.create = function(apiKey){
     return new LastFmClient(apiKey);

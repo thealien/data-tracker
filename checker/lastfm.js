@@ -40,7 +40,7 @@ function LastfmChecker (config) {
 
         if (!isSame(this.getCurrentTrack(), track)) {
             currentTrack = track;
-            me.getClient().getTrackInfo(track.mbid, function (error, result) {
+            me.getClient().getTrackInfo2(track.artist, track.name, function (error, result) {
                 if (!error) {
                     try {
                         track.image = result.track.album.image;
